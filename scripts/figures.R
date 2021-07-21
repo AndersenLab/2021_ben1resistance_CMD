@@ -69,6 +69,92 @@ medianabz <- fulla %>%
 plota <- cowplot::plot_grid(medianabz,medianfbz, labels = c("A","B"))
 
 ggsave("~/Desktop/2021_newben1paper/plots/figure1.png", plot = plota, width = 7.5, height = 3, units = "in")
+
+##FIGURE 2 PLOT 
+fitcalc <- rio::import("~/Desktop/2021_newben1paper/data/S6.tsv")
+
+filtfit <- fitcalc %>%
+  dplyr::filter(Fitness != "NaN")%>%
+  dplyr::mutate(sig = case_when(Condition=="A"~"****",
+                                Condition == "D" ~"ns"))
+
+filtd <- filtfit %>%
+  dplyr::filter(Condition == "D")%>%
+  aov(Fitness ~ Strain, data = .)%>%
+  rstatix::tukey_hsd()
+
+filta <- filtfit %>%
+  dplyr::filter(Condition == "A")%>%
+  aov(Fitness ~ Strain, data = .)%>%
+  rstatix::tukey_hsd()
+
+fitaplot <- filtfit %>%
+  dplyr::filter(Condition == "A")%>%
+  dplyr::mutate(Strain = factor(Strain, levels = c("N2","882","2795","2798","2801","2816")))%>%
+  ggplot()+
+  aes(x=Strain, y=Fitness*-1,fill=Strain)+
+  geom_boxplot(outlier.shape = NA)+
+  geom_jitter(width = 0.1)+
+  ylim(-1.5,1.5)+
+  geom_hline(yintercept = 0)+
+  scale_x_discrete(labels=c("N2" = "WT", "882" = "Deletion","2795" = "E198I","2798"="E198K","2801"="E198T","2816"="E198*"))+
+  scale_fill_manual(name = "fancy_strain", labels = c("N2" = "Suceptible","882"="Deletion","2795"="E198I","2798"="E198K", "2801" = "E198T","2816" = "E198*"), values = c("N2" = "orange", "882" = "grey","2795" = "cadetblue3","2798"="tan","2801"="pink","2816"="darkred"))+
+  scale_color_manual(name = "Strain", labels = c("N2" = "Suceptible","882"="Deletion","2795"="E198I","2798"="E198K", "2801" = "E198T","2816" = "E198*"), values = colsnewben1)+
+  cowplot::theme_cowplot(12)+
+  ylab("Relative fitness")+
+  theme(legend.position = "none")
+
+fitdplot <- filtfit %>%
+  dplyr::filter(Condition == "D")%>%
+  dplyr::mutate(Strain = factor(Strain, levels = c("N2","882","2795","2798","2801","2816")))%>%
+  ggplot()+
+  aes(x=Strain, y=Fitness*-1,fill=Strain)+
+  geom_boxplot(outlier.shape = NA)+
+  geom_jitter(width = 0.1)+
+  ylim(-1.5,1.5)+
+  geom_hline(yintercept = 0)+
+  scale_x_discrete(labels=c("N2" = "WT", "882" = "Deletion","2795" = "E198I","2798"="E198K","2801"="E198T","2816"="E198*"))+
+  scale_fill_manual(name = "fancy_strain", labels = c("N2" = "Suceptible","882"="Deletion","2795"="E198I","2798"="E198K", "2801" = "E198T","2816" = "E198*"), values = c("N2" = "orange", "882" = "grey","2795" = "cadetblue3","2798"="tan","2801"="pink","2816"="darkred"))+
+  scale_color_manual(name = "Strain", labels = c("N2" = "Suceptible","882"="Deletion","2795"="E198I","2798"="E198K", "2801" = "E198T","2816" = "E198*"), values = colsnewben1)+
+  cowplot::theme_cowplot(12)+
+  ylab("Relative fitness")+
+  theme(legend.position = "none")
+
+fixedcolspl1 <- rio::import("~/Desktop/2021_newben1paper/data/S7.tsv")
+
+colcomp <- c("N2" = "orange","882"="grey","919"="red","920"="red","1325"="yellow","1326"="yellow","1327"="purple","1328"="purple","1082" = "blue","1081" = "blue", "1076" = "green","1075" = "green", "Deletion" = "grey", "F200Y" = "Red", "E198V"= "Purple","E198L"="yellow","E198A"="blue","F167Y"="green","2795"="cadetblue3","2799"="cadetblue3","2798"="tan","2805"="tan","2804"="pink","2801"="pink","2816"="darkred","2817"="darkred")
+
+allelefreqa <- fixedcolspl1%>%
+  dplyr::filter(condition == "ABZ")%>%
+  ggplot()+
+  aes(x=gen,y=((100-meanab)/100),colour = strain)+
+  geom_point(aes(color=strain))+
+  ylab("Relative allele frequency")+
+  xlab("Generation")+
+  geom_errorbar(aes(ymin=((100-(meanab - sdab))/100), ymax=((100-(meanab + sdab))/100)), width=0.5,size=0.75)+
+  geom_line(size=1)+
+  scale_color_manual(name = "strain", labels = c("N2" = "Suceptible","882"="Deletion","2795"="E198I","2798"="E198K", "2799" = "E198I", "2801" = "E198T","2804" = "E198T", "2805" = "E198K","2816" = "E198*", "2817" = "E198*"), values = colcomp)+
+  ylim(0,100)+
+  scale_x_continuous(breaks = c(1,3,5,7))+
+  cowplot::theme_cowplot(12)+
+  theme(legend.position = "none")
+
+allelefreqd <- fixedcolspl1%>%
+  dplyr::filter(condition == "DMSO")%>%
+  ggplot()+
+  aes(x=gen,y=((100-meanab)/100),colour = strain)+
+  geom_point(aes(color=strain))+
+  ylab("Relative allele frequency")+
+  xlab("Generation")+
+  geom_errorbar(aes(ymin=((100-(meanab - sdab))/100), ymax=((100-(meanab + sdab))/100)), width=0.5,size=0.75)+
+  geom_line(size=1)+
+  scale_color_manual(name = "strain", labels = c("N2" = "Suceptible","882"="Deletion","2795"="E198I","2798"="E198K", "2799" = "E198I", "2801" = "E198T","2804" = "E198T", "2805" = "E198K","2816" = "E198*", "2817" = "E198*"), values = colcomp)+
+  ylim(0,1)+
+  scale_x_continuous(breaks = c(1,3,5,7))+
+  cowplot::theme_cowplot(12)+
+  theme(legend.position = "none")
+
+cowplot::plot_grid(allelefreqa,fitaplot,allelefreqd,fitdplot,ncol = 2,nrow = 2)
 ##FIGURE 3 PLOT
 non_contamgfp <- rio::import("~/Desktop/2021_newben1paper/data/S3.tsv")
 
@@ -146,6 +232,12 @@ boxplot <- fullgfp%>%
         axis.title.x = element_blank(),
         legend.position = "none")
 
+non_contamgfp %>%
+  dplyr::mutate(GFP = ifelse(non_contamgfp$norm.green > cutoff,"GFP","nonGFP"))%>%
+  ggplot()+
+  aes(x=norm.green)+
+  geom_density(aes(y=..density..))
+  
 GFPsplit <- non_contamgfp %>%
   dplyr::mutate(GFP = ifelse(non_contamgfp$norm.green > cutoff,"GFP","nonGFP"))%>%
   ggplot()+
@@ -353,7 +445,7 @@ supplementalfigure4 <- gfp_noncontam%>%
   cowplot::theme_cowplot(12)+
   ylim(100,750)+
   scale_x_discrete(breaks = c("N2(Hom)","N2(Het)","del(Hom)","del(Het)","F200Y(Hom)","F200Y(Het)","F167Y(Hom)","F167Y(Het)","E198A(Hom)","E198A(Het)","E198V(Hom)","E198V(Het)","E198L(Hom)","E198L(Het)"),labels = c("+\n+","+\n+","Δben-1\nΔben-1","Δben-1\n+","F200Y\nF200Y","F200Y\n+","F167Y\nF167Y","F167Y\n+","E198A\nE198A","E198A\n+","E198V\nE198V","E198V\n+","E198L\nE198L","E198L\n+"))+
-  ylab("Worm legnth")+
+  ylab("Animal legnth")+
   xlab("Strain")+
   geom_text(aes(x=fancy_strain, y=725, label = statsig))+
   theme(legend.position = "top",
