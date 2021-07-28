@@ -68,25 +68,30 @@ medianabz <- fulla %>%
 
 plota <- cowplot::plot_grid(medianabz,medianfbz, labels = c("A","B"))
 
-ggsave("~/Desktop/2021_newben1paper/plots/figure1.png", plot = plota, width = 7.5, height = 3, units = "in")
+ggsave("~/Desktop/2021_newben1paper/plots/figure1.jpeg", plot = plota, width = 7.5, height = 3, units = "in")
 
 ##FIGURE 2 PLOT 
 fitcalc <- rio::import("~/Desktop/2021_newben1paper/data/S6.tsv")
 
 filtfit <- fitcalc %>%
   dplyr::filter(Fitness != "NaN")%>%
-  dplyr::mutate(sig = case_when(Condition=="A"~"****",
+  dplyr::mutate(sig = case_when(Strain =="N2" ~ "",
+                                Condition=="A"~"****",
                                 Condition == "D" ~"ns"))
 
 filtd <- filtfit %>%
   dplyr::filter(Condition == "D")%>%
   aov(Fitness ~ Strain, data = .)%>%
-  rstatix::tukey_hsd()
+  rstatix::tukey_hsd()%>%
+  dplyr::filter(group2=="N2")%>%
+  dplyr::mutate(Strain= group1)
 
 filta <- filtfit %>%
   dplyr::filter(Condition == "A")%>%
   aov(Fitness ~ Strain, data = .)%>%
-  rstatix::tukey_hsd()
+  rstatix::tukey_hsd()%>%
+  dplyr::filter(group2 == "N2")%>%
+  dplyr::mutate(Strain = group1)
 
 fitaplot <- filtfit %>%
   dplyr::filter(Condition == "A")%>%
@@ -95,14 +100,20 @@ fitaplot <- filtfit %>%
   aes(x=Strain, y=Fitness*-1,fill=Strain)+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(width = 0.1)+
-  ylim(-1.5,1.5)+
   geom_hline(yintercept = 0)+
+  scale_y_continuous(sec.axis = dup_axis(name = "Albendazole"))+
+  stat_pvalue_manual(filta, label = "p.adj.signif",xmax="group1", y.position = c(1.25),remove.bracket = TRUE,size = 4)+
   scale_x_discrete(labels=c("N2" = "WT", "882" = "Deletion","2795" = "E198I","2798"="E198K","2801"="E198T","2816"="E198*"))+
   scale_fill_manual(name = "fancy_strain", labels = c("N2" = "Suceptible","882"="Deletion","2795"="E198I","2798"="E198K", "2801" = "E198T","2816" = "E198*"), values = c("N2" = "orange", "882" = "grey","2795" = "cadetblue3","2798"="tan","2801"="pink","2816"="darkred"))+
   scale_color_manual(name = "Strain", labels = c("N2" = "Suceptible","882"="Deletion","2795"="E198I","2798"="E198K", "2801" = "E198T","2816" = "E198*"), values = colsnewben1)+
   cowplot::theme_cowplot(12)+
-  ylab("Relative fitness")+
-  theme(legend.position = "none")
+  ylab("Competetive fitness")+
+  theme(legend.position = "none",
+        axis.text.y.right = element_blank(),
+        axis.ticks.y.right = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_text(size = 12, angle = 45,hjust = 1,vjust = 1,margin = unit(c(0,0,0,0),units = "in")),
+        axis.title.x = element_blank())
 
 fitdplot <- filtfit %>%
   dplyr::filter(Condition == "D")%>%
@@ -111,14 +122,20 @@ fitdplot <- filtfit %>%
   aes(x=Strain, y=Fitness*-1,fill=Strain)+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(width = 0.1)+
-  ylim(-1.5,1.5)+
+  scale_y_continuous(sec.axis = dup_axis(name = "DMSO"),limits = c(-0.2,0.3))+
   geom_hline(yintercept = 0)+
+  stat_pvalue_manual(filtd, label = "p.adj.signif",xmax="group1", y.position = c(0.23),remove.bracket = TRUE,size = 4)+
   scale_x_discrete(labels=c("N2" = "WT", "882" = "Deletion","2795" = "E198I","2798"="E198K","2801"="E198T","2816"="E198*"))+
   scale_fill_manual(name = "fancy_strain", labels = c("N2" = "Suceptible","882"="Deletion","2795"="E198I","2798"="E198K", "2801" = "E198T","2816" = "E198*"), values = c("N2" = "orange", "882" = "grey","2795" = "cadetblue3","2798"="tan","2801"="pink","2816"="darkred"))+
   scale_color_manual(name = "Strain", labels = c("N2" = "Suceptible","882"="Deletion","2795"="E198I","2798"="E198K", "2801" = "E198T","2816" = "E198*"), values = colsnewben1)+
   cowplot::theme_cowplot(12)+
-  ylab("Relative fitness")+
-  theme(legend.position = "none")
+  ylab("Competetive fitness")+
+  theme(legend.position = "none",
+        axis.text.y.right = element_blank(),
+        axis.ticks.y.right = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_text(size = 12, angle = 45,hjust = 1,vjust = 1,margin = unit(c(0,0,0,0),units = "in")),
+        axis.title.x = element_blank())
 
 fixedcolspl1 <- rio::import("~/Desktop/2021_newben1paper/data/S7.tsv")
 
@@ -131,10 +148,10 @@ allelefreqa <- fixedcolspl1%>%
   geom_point(aes(color=strain))+
   ylab("Relative allele frequency")+
   xlab("Generation")+
-  geom_errorbar(aes(ymin=((100-(meanab - sdab))/100), ymax=((100-(meanab + sdab))/100)), width=0.5,size=0.75)+
+  geom_errorbar(aes(ymin=((100-(meanab - sdab))/100), ymax=((100-(meanab + sdab))/100)), width=0.25,size=0.5)+
   geom_line(size=1)+
+  scale_y_continuous(breaks = c(0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1),limits = c(0,1.0))+
   scale_color_manual(name = "strain", labels = c("N2" = "Suceptible","882"="Deletion","2795"="E198I","2798"="E198K", "2799" = "E198I", "2801" = "E198T","2804" = "E198T", "2805" = "E198K","2816" = "E198*", "2817" = "E198*"), values = colcomp)+
-  ylim(0,100)+
   scale_x_continuous(breaks = c(1,3,5,7))+
   cowplot::theme_cowplot(12)+
   theme(legend.position = "none")
@@ -146,15 +163,18 @@ allelefreqd <- fixedcolspl1%>%
   geom_point(aes(color=strain))+
   ylab("Relative allele frequency")+
   xlab("Generation")+
-  geom_errorbar(aes(ymin=((100-(meanab - sdab))/100), ymax=((100-(meanab + sdab))/100)), width=0.5,size=0.75)+
+  geom_errorbar(aes(ymin=((100-(meanab - sdab))/100), ymax=((100-(meanab + sdab))/100)), width=0.25,size=0.5)+
   geom_line(size=1)+
+  scale_y_continuous(breaks = c(0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1),limits = c(0,1.0))+
   scale_color_manual(name = "strain", labels = c("N2" = "Suceptible","882"="Deletion","2795"="E198I","2798"="E198K", "2799" = "E198I", "2801" = "E198T","2804" = "E198T", "2805" = "E198K","2816" = "E198*", "2817" = "E198*"), values = colcomp)+
-  ylim(0,1)+
   scale_x_continuous(breaks = c(1,3,5,7))+
   cowplot::theme_cowplot(12)+
   theme(legend.position = "none")
 
-cowplot::plot_grid(allelefreqa,fitaplot,allelefreqd,fitdplot,ncol = 2,nrow = 2)
+compplot <- cowplot::plot_grid(allelefreqd,fitdplot,allelefreqa,fitaplot,ncol = 2,nrow = 2,labels = c("A","B","C","D"),align = "vh",axis = "lrbt",label_size = 12,label_fontfamily = "Arial",rel_widths = c(1,1,1,1),rel_heights = c(1,1,1,1))
+
+ggsave(filename = "~/Desktop/2021_newben1paper/plots/figure2.jpeg",plot = compplot ,width = 7.5,height = 6,units = "in")
+
 ##FIGURE 3 PLOT
 non_contamgfp <- rio::import("~/Desktop/2021_newben1paper/data/S3.tsv")
 
@@ -263,7 +283,7 @@ scheme <- ggdraw()+draw_image("~/Desktop/2021_newben1paper/plots/Crosssetup.png"
 
 fig3 <- cowplot::plot_grid(cowplot::plot_grid(scheme,GFPsplit,ncol = 2,labels = c("A","B")), boxplot,nrow = 2,labels = c("A","C"))
 
-ggsave("~/Desktop/2021_newben1paper/plots/figure3.png", plot = fig3,width = 8.5,height = 6,units = "in")
+ggsave("~/Desktop/2021_newben1paper/plots/figure3.jpeg", plot = fig3,width = 8.5,height = 6,units = "in")
 
 ##Supplemental Figure 1
 fullall <- rio::import("~/Desktop/2021_newben1paper/data/S4.tsv")
@@ -338,7 +358,7 @@ allallelesfbzconditions <- fullall%>%
 
 
 allalleles <- cowplot::plot_grid(allallelesabzconditions, allallelesfbzconditions, ncol=2, labels = c("A","B"))
-ggsave("~/Desktop/2021_newben1paper/plots/supplementalfigure1.png", plot = allalleles, width = 7.5,height = 6,units = "in")
+ggsave("~/Desktop/2021_newben1paper/plots/supplementalfigure1.jpeg", plot = allalleles, width = 7.5,height = 6,units = "in")
 
 ##Supplemental figure 2
 
@@ -372,7 +392,7 @@ DMSOplot <- outprunedDMSO%>%
         axis.text.x = element_text(size = 12, angle = 45, vjust = 0.5),
         strip.text = element_text(size = 12, face = "bold"),
         axis.title.x = element_blank())
-ggsave("~/Desktop/2021_newben1paper/plots/supplementalfigure2.png", plot = DMSOplot, width = 7.5, height = 3, units = "in")
+ggsave("~/Desktop/2021_newben1paper/plots/supplementalfigure2.jpeg", plot = DMSOplot, width = 7.5, height = 3, units = "in")
 
 ##Supplemental figure 3
 
@@ -403,7 +423,7 @@ DMSOGFP <- out_prunedgfp%>%
         axis.title.x = element_blank(),
         legend.position = "none")
 
-ggsave("~/Desktop/2021_newben1paper/plots/supplementalfigure3.png", plot=DMSOGFP, width = 8.5, height = 4, units = "in")
+ggsave("~/Desktop/2021_newben1paper/plots/supplementalfigure3.jpeg", plot=DMSOGFP, width = 8.5, height = 4, units = "in")
 
 
 stats <- NULL
@@ -452,5 +472,5 @@ supplementalfigure4 <- gfp_noncontam%>%
     axis.title.x = element_blank(),
     strip.background = element_blank(),
     strip.text = element_blank())
-ggsave("~/Desktop/2021_newben1paper/plots/supplementalfigure4.png", plot = supplementalfigure4, width = 7.5, height = 4, units = "in")
+ggsave("~/Desktop/2021_newben1paper/plots/supplementalfigure4.jpeg", plot = supplementalfigure4, width = 7.5, height = 4, units = "in")
 
